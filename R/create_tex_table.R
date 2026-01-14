@@ -1,47 +1,104 @@
-# Load necessary libraries
-if (!require("stats")) install.packages("stats")
-
-# -------------------------------------------------------------------------
-# 1. Helper Functions for Cell Formats
-# -------------------------------------------------------------------------
-
 #' Create an estimate object with Standard Error
-#' @param b The coefficient estimate (float)
-#' @param se The standard error (float)
-#' @param p_val (Optional) Override p-value. If NULL, calculated from Normal dist.
+#'
+#' Helper function to create a cell containing a coefficient estimate with
+#' standard error in parentheses and significance stars.
+#'
+#' @param b Numeric. The coefficient estimate
+#' @param se Numeric. The standard error
+#' @param p_val Numeric. Optional p-value override. If NULL, calculated from Normal distribution
+#'
+#' @return An object of class 'cell_est'
+#' @export
+#'
+#' @examples
+#' # Create an estimate with auto-calculated significance
+#' est(0.452, 0.100)
+#'
+#' # Create an estimate with custom p-value
+#' est(0.452, 0.100, p_val = 0.03)
 est <- function(b, se, p_val = NULL) {
   structure(list(b = b, se = se, p = p_val), class = "cell_est")
 }
 
 #' Create an estimate object with Confidence Intervals
-#' @param b The coefficient estimate (float)
-#' @param lower Lower bound of CI
-#' @param upper Upper bound of CI
+#'
+#' Helper function to create a cell containing a coefficient estimate with
+#' confidence interval in brackets below.
+#'
+#' @param b Numeric. The coefficient estimate
+#' @param lower Numeric. Lower bound of confidence interval
+#' @param upper Numeric. Upper bound of confidence interval
+#'
+#' @return An object of class 'cell_est_ci'
+#' @export
+#'
+#' @examples
+#' est_ci(1.2, 0.9, 1.5)
 est_ci <- function(b, lower, upper) {
   structure(list(b = b, l = lower, u = upper), class = "cell_est_ci")
 }
 
-# -------------------------------------------------------------------------
-# 2. The Main Function
-# -------------------------------------------------------------------------
-
 #' Generate a Custom LaTeX Table
 #'
-#' @param filename String. Output filename (e.g., "table1.tex").
-#' @param rows Vector of strings. Default row names (used if panels don't specify their own).
-#' @param cols Vector of strings. Column names.
-#' @param cells List of cell contents. For single-panel tables (backward compatibility).
-#' @param panels List of panels. Each panel is a list with: name, cells, and optionally rows.
-#'               Example: list(list(name="Panel A", cells=list(...)), list(name="Panel B", rows=c("X","Y"), cells=list(...)))
-#' @param caption String. Title of the table.
-#' @param ind Logical. If TRUE, adds (1), (2)... numbering below column names.
-#' @param stats Character vector. Names of statistics rows (e.g., "R-squared").
-#' @param stat_cells List. Content for the stats cells (length = n_stats * n_cols).
-#' @param data_source Optional data.frame. Used if cells contain coordinate vectors c(r, c).
-#' @param note String. Bottom note.
-#' @param col_width String. LaTeX width for content columns (e.g., "2.5cm").
-#' @param font_size String. LaTeX font size (e.g., "\\small", "\\scriptsize").
+#' Creates professionally formatted LaTeX tables with support for multi-panel layouts,
+#' nested statistics, confidence intervals, and significance stars. Ideal for
+#' academic regression tables and research output.
 #'
+#' @param filename String. Output filename (e.g., "table1.tex")
+#' @param rows Character vector. Default row names (used if panels don't specify their own)
+#' @param cols Character vector. Column names
+#' @param cells List. Cell contents for single-panel tables (backward compatibility)
+#' @param panels List of lists. Each panel contains: name, cells, and optionally rows.
+#'   Example: list(list(name="Panel A", cells=list(...)), list(name="Panel B", rows=c("X","Y"), cells=list(...)))
+#' @param caption String. Table caption
+#' @param ind Logical. If TRUE, adds (1), (2), ... numbering below column names
+#' @param stats Character vector. Names of statistics rows (e.g., "R-squared", "N")
+#' @param stat_cells List. Content for statistics cells (length = n_stats * n_cols)
+#' @param data_source Data frame. Optional data source for coordinate-based cell references
+#' @param note String. Table footnote
+#' @param col_width String. LaTeX width for content columns (e.g., "2.5cm")
+#' @param font_size String. LaTeX font size command (e.g., "\\small", "\\scriptsize")
+#'
+#' @return NULL (writes table to file)
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Simple single-panel table
+#' create_tex_table(
+#'   filename = "results.tex",
+#'   rows = c("Variable A", "Variable B"),
+#'   cols = c("Model 1", "Model 2"),
+#'   cells = list(
+#'     est(0.452, 0.100), est(0.380, 0.120),
+#'     est_ci(1.2, 0.9, 1.5), est_ci(1.1, 0.8, 1.4)
+#'   ),
+#'   caption = "Regression Results",
+#'   ind = TRUE,
+#'   stats = c("R-Squared", "N"),
+#'   stat_cells = list(0.89, 0.91, 1250, 1250),
+#'   note = "Notes: * p<0.1; ** p<0.05; *** p<0.01."
+#' )
+#'
+#' # Multi-panel table
+#' create_tex_table(
+#'   filename = "multi_panel.tex",
+#'   cols = c("Model 1", "Model 2"),
+#'   panels = list(
+#'     list(
+#'       name = "Panel A: Main Results",
+#'       rows = c("Variable A", "Variable B"),
+#'       cells = list(est(0.45, 0.1), est(0.38, 0.12), est(0.34, 0.09), est(0.31, 0.11))
+#'     ),
+#'     list(
+#'       name = "Panel B: Robustness",
+#'       rows = c("Control X", "Control Y"),
+#'       cells = list(est(0.23, 0.08), est(0.21, 0.09), est(0.19, 0.07), est(0.18, 0.08))
+#'     )
+#'   ),
+#'   caption = "Multi-Panel Results"
+#' )
+#' }
 create_tex_table <- function(filename, 
                              rows = NULL, 
                              cols, 
@@ -58,7 +115,6 @@ create_tex_table <- function(filename,
   
   # --- 1. Sanitize Inputs ---
   
-  # Helper to escape special LaTeX characters
   tex_clean <- function(x) {
     if (is.numeric(x)) return(as.character(x))
     x <- gsub("\\%", "\\\\%", x)
@@ -69,7 +125,7 @@ create_tex_table <- function(filename,
   
   n_cols <- length(cols)
   
-  # Handle backward compatibility: if panels is NULL, create single panel from cells
+  # Handle backward compatibility
   if (is.null(panels)) {
     if (is.null(cells) || is.null(rows)) {
       stop("Error: Must provide either 'panels' argument or both 'rows' and 'cells' arguments.")
@@ -81,7 +137,6 @@ create_tex_table <- function(filename,
   for (p_idx in seq_along(panels)) {
     panel <- panels[[p_idx]]
     
-    # If panel doesn't have rows specified, use default
     if (is.null(panel$rows)) {
       if (is.null(rows)) {
         stop(paste("Error: Panel", p_idx, "has no rows specified and no default rows provided."))
@@ -89,7 +144,6 @@ create_tex_table <- function(filename,
       panels[[p_idx]]$rows <- rows
     }
     
-    # Validate cell count for this panel
     panel_rows <- panels[[p_idx]]$rows
     n_rows <- length(panel_rows)
     expected_cells <- n_rows * n_cols
@@ -103,9 +157,8 @@ create_tex_table <- function(filename,
   # --- 2. Process Cells Function ---
   
   format_cell <- function(content) {
-    # A. Handle Coordinate Lookup c(row, col) if data_source exists
+    # A. Handle Coordinate Lookup
     if (!is.null(data_source) && is.numeric(content) && length(content) == 2 && !inherits(content, "cell_est")) {
-      # Try to fetch from data source
       tryCatch({
         content <- data_source[content[1], content[2]]
       }, error = function(e) {
@@ -118,7 +171,6 @@ create_tex_table <- function(filename,
       b <- content$b
       se <- content$se
       
-      # Significance
       if (is.null(content$p)) {
         z <- abs(b / se)
         pval <- 2 * (1 - pnorm(z))
@@ -146,12 +198,11 @@ create_tex_table <- function(filename,
     
     # D. Handle Vectors (Stacking content)
     if (length(content) > 1) {
-      # Stack elements vertically
       clean_content <- sapply(content, tex_clean)
       return(paste0("\\begin{tabular}{@{}c@{}}", paste(clean_content, collapse = " \\\\ "), "\\end{tabular}"))
     }
     
-    # E. Handle Primitives (String/Float)
+    # E. Handle Primitives
     if (is.numeric(content)) return(round(content, 3))
     if (is.character(content)) return(tex_clean(content))
     if (is.na(content)) return("")
@@ -167,7 +218,6 @@ create_tex_table <- function(filename,
   lines <- c(lines, "\\begin{threeparttable}")
   lines <- c(lines, paste0("\\caption{", caption, "}"))
   
-  # Define Column Format
   col_def <- paste0("l ", paste(rep(paste0(">{\\centering\\arraybackslash}p{", col_width, "}"), n_cols), collapse = " "))
   lines <- c(lines, paste0(font_size, " \\begin{tabular}{", col_def, "}"))
   lines <- c(lines, "\\toprule")
@@ -176,7 +226,6 @@ create_tex_table <- function(filename,
   header_row <- paste(c("", sapply(cols, tex_clean)), collapse = " & ")
   lines <- c(lines, paste0(header_row, " \\\\"))
   
-  # Optional Indicator Row (1) (2) ...
   if (ind) {
     ind_nums <- paste0("(", 1:n_cols, ")")
     ind_row <- paste(c("", ind_nums), collapse = " & ")
@@ -189,16 +238,14 @@ create_tex_table <- function(filename,
   for (p_idx in seq_along(panels)) {
     panel <- panels[[p_idx]]
     
-    # Panel header (if named)
     if (!is.null(panel$name) && panel$name != "") {
-      total_cols <- n_cols + 1  # Include the row label column
+      total_cols <- n_cols + 1
       panel_header <- paste0("\\multicolumn{", total_cols, "}{l}{\\textit{", 
                             tex_clean(panel$name), "}} \\\\")
       lines <- c(lines, panel_header)
       lines <- c(lines, "\\midrule")
     }
     
-    # Panel Body Rows
     panel_rows <- panel$rows
     n_rows <- length(panel_rows)
     cell_idx <- 1
@@ -217,7 +264,6 @@ create_tex_table <- function(filename,
       lines <- c(lines, "\\addlinespace[0.2cm]")
     }
     
-    # Add separator between panels (except after last panel)
     if (p_idx < length(panels)) {
       lines <- c(lines, "\\midrule")
     }
@@ -248,7 +294,6 @@ create_tex_table <- function(filename,
   
   lines <- c(lines, "\\end{tabular}")
   
-  # Note
   if (!is.null(note)) {
     lines <- c(lines, "\\begin{tablenotes}")
     lines <- c(lines, "\\footnotesize")
@@ -263,3 +308,4 @@ create_tex_table <- function(filename,
   writeLines(lines, filename)
   message(paste("Table successfully saved to:", filename))
 }
+

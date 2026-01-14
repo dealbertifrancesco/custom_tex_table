@@ -1,0 +1,16 @@
+Package: customtextable
+Type: Package
+Title: Custom LaTeX Table Generator
+Version: 0.1.0
+Authors@R: person("Francesco", "Dealberti", email = "dealberti.francesco@gmail.com", role = c("aut", "cre"))
+Description: Generate custom formatted LaTeX tables with support for 
+    multi-panel layouts, confidence intervals, standard errors, and 
+    statistical significance stars. Designed for academic research papers.
+    Developed with the help of Generative AI (Claude by Anthropic).
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends: R (>= 3.5.0)
+Imports: stats
+RoxygenNote: 7.0.0
+

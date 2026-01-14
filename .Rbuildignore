@@ -1,0 +1,10 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^build$
+^test\.tex$
+^.*\.pdf$
+^setup_package\.R$
+^renv$
+^renv\.lock$
+^\.Rprofile$
+
