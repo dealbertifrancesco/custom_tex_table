@@ -1,0 +1,31 @@
+# R history and workspace
+.Rhistory
+.RData
+.Rproj.user
+
+# VS Code settings
+.vscode/
+
+# renv library (don't commit the whole library)
+renv/library/
+
+# Output / temporary files
+*.log
+*.tmp
+*.out
+*.aux
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Compiled LaTeX / PDFs if you don’t want them tracked
+*.pdf
+*.synctex.gz
+*.bbl
+*.blg
