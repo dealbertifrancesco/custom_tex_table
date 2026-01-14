@@ -40,11 +40,9 @@ create_tex_table(
 
 ## Features
 
-- **Automatic significance stars** based on p-values
-- **Multi-panel support** for complex tables
-- **Confidence intervals** with proper LaTeX formatting
-- **Flexible cell content**: strings, numbers, vectors, or formatted estimates
-- **Professional LaTeX output** using booktabs and threeparttable
+- **Multi-panel support**
+- **Confidence intervals or significance stars** 
+- **Flexible cell content**
 
 ## Multi-Panel Tables
 
